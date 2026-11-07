@@ -1,0 +1,8 @@
+установка:
+pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/ТВОЙ_НИК/ИМЯ_РЕПО/main/install.sh | bash
+Запуск: 
+tgp
+команды: tgp stop,tgp update,tgp bg,tgp link
+удаление кода :
+tgp stop
+rm -rf ~/tg-ws-proxy ~/.tgproxy_secret $PREFIX/bin/tgp
