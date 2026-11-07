@@ -1,5 +1,4 @@
-установка:
-pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/ТВОЙ_НИК/ИМЯ_РЕПО/main/install.sh | bash
+установка: pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/Andrui-youtube/Tg ws proxy termux/main/install.sh | bash
 Запуск: 
 tgp
 команды: tgp stop,tgp update,tgp bg,tgp link
