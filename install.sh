@@ -1,75 +1,69 @@
 #!/data/data/com.termux/files/usr/bin/bash
-
 set -e
+echo "▶ Установка TG WS Proxy для Termux..."
 
-echo "=== TG WS Proxy для Termux ==="
+DEBIAN_FRONTEND=noninteractive pkg update -y
+pkg install -y python python-cryptography git
+pkg install -y python-psutil 2>/dev/null || true
 
-# Проверка Termux
-if [ -z "$PREFIX" ]; then
-    echo "Ошибка: запусти скрипт в Termux"
-    exit 1
-fi
+pip install "httpx[http2]" certifi
 
-# Установка зависимостей
-pkg update -y
-pkg install -y python git
-
-# Скачивание оригинального проекта
-if [ -d "$HOME/tg-ws-proxy/.git" ]; then
-    git -C "$HOME/tg-ws-proxy" pull
+cd "$HOME"
+if [ -d tg-ws-proxy ]; then
+  git -C tg-ws-proxy pull
 else
-    git clone https://github.com/Flowseal/tg-ws-proxy.git "$HOME/tg-ws-proxy"
+  git clone https://github.com/Flowseal/tg-ws-proxy
 fi
 
-# Установка Python-пакета
-python -m pip install -e "$HOME/tg-ws-proxy"
+python -c "import cryptography, httpx, h2, certifi" \
+  || { echo "❌ Не поставились зависимости"; exit 1; }
 
-# Создание команды запуска
-cat > "$PREFIX/bin/tgp" <<'SCRIPT'
+cat > "$PREFIX/bin/tgp" << 'LAUNCH'
 #!/data/data/com.termux/files/usr/bin/bash
+HOST=127.0.0.1; PORT=1443
+DIR=$HOME/tg-ws-proxy
+SF=$HOME/.tgproxy_secret
+[ -f "$SF" ] || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$SF"
+SECRET=$(cat "$SF")
+LINK="tg://proxy?server=$HOST&port=$PORT&secret=$SECRET"
 
-DIR="$HOME/tg-ws-proxy"
-PIDFILE="$HOME/.tgproxy.pid"
-LOGFILE="$HOME/.tgproxy.log"
+run() {
+  cd "$DIR" && PYTHONPATH="$DIR" python -c \
+    "import sys; from proxy.tg_ws_proxy import main; sys.argv[0]='tg-ws-proxy'; main()" "$@"
+}
 
 case "$1" in
-    stop)
-        if [ -f "$PIDFILE" ]; then
-            kill "$(cat "$PIDFILE")" 2>/dev/null || true
-            rm -f "$PIDFILE"
-            echo "Прокси остановлен"
-        else
-            echo "Прокси не запущен"
-        fi
-        ;;
-    bg)
-        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
-            echo "Прокси уже запущен"
-            exit 0
-        fi
-        nohup tg-ws-proxy --host 127.0.0.1 --port 1443 > "$LOGFILE" 2>&1 &
-        echo $! > "$PIDFILE"
-        echo "Прокси запущен в фоне"
-        echo "Лог: $LOGFILE"
-        ;;
-    update)
-        git -C "$DIR" pull &&
-        python -m pip install -e "$DIR"
-        ;;
-    link)
-        echo "Проверь настройки и лог запуска:"
-        cat "$LOGFILE" 2>/dev/null || true
-        ;;
-    *)
-        cd "$DIR"
-        exec tg-ws-proxy --host 127.0.0.1 --port 1443
-        ;;
+  stop)   pkill -f proxy.tg_ws_proxy && echo "Остановлен" || echo "Не запущен"; exit;;
+  link)   termux-open-url "$LINK"; exit;;
+  update) git -C "$DIR" pull; exit;;
 esac
-SCRIPT
 
+clear
+echo "╔════════════════════════════╗"
+echo "║       TG WS PROXY 🚀       ║"
+echo "╚════════════════════════════╝"
+echo
+echo "Настройки Telegram (MTProto):"
+echo "  Сервер: $HOST"
+echo "  Порт:   $PORT"
+echo "  Secret: $SECRET"
+echo
+echo "Быстрое подключение:"
+echo "$LINK"
+echo
+echo "Команды: tgp bg | tgp stop | tgp link | tgp update"
+echo "────────────────────────────"
+termux-wake-lock 2>/dev/null
+
+if [ "$1" = "bg" ]; then
+  nohup bash -c "cd '$DIR' && PYTHONPATH='$DIR' python -c \"import sys; from proxy.tg_ws_proxy import main; main()\" --host $HOST --port $PORT --secret $SECRET --log-file $HOME/tgproxy.log" > /dev/null 2>&1 &
+  echo "Запущен в фоне"
+else
+  run --host "$HOST" --port "$PORT" --secret "$SECRET"
+fi
+LAUNCH
 chmod +x "$PREFIX/bin/tgp"
 
-echo ""
-echo "Установка завершена!"
-echo "Для запуска введи: tgp"
+echo
+echo "✅ Готово! Запуск: tgp"
 echo " бурмалда Марк "
