@@ -20,7 +20,7 @@
 Открой Termux и вставь команду:
 
 ```bash
-pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/Andrui-youtuber/Tg-ws-proxy termux-./main/install.sh | bash
+pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/Andrui-youtuber/Tg-ws-proxy/main/install.sh | bash
 ```
 
 Подожди пару минут. В конце появится надпись **«Готово»**.
