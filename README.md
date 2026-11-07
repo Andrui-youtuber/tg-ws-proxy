@@ -1,5 +1,5 @@
 # Andrui-.github.io
-# 🚀 TG WS Proxy для Termux
+# 🚀 tg ws proxy для Termux
 
 Локальный MTProto-прокси для Telegram, который запускается прямо на Android через Termux. Установка одной командой.
 
